@@ -18,9 +18,18 @@ const weeklyData = [
     { day: 'Sun', usage: 4300 },
 ]
 
+const solarProjects = [
+    { name: 'CACAC', size: '81.32 kW', status: 'In Service' },
+    { name: 'Gary W. Harris Center', size: '150 kW', status: 'In Service' },
+    { name: 'RDP Residence Building', size: '124 kW', status: 'In Service' },
+    { name: 'AEL Lab', size: '60 kW', status: 'In Service' },
+    { name: 'RDP Carpentry Roof', size: '92 kW', status: 'In Service' },
+    { name: 'Solar Walkway', size: '85 kW', status: 'In Service' },
+]
+
 const RightPanel = () => {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflowY: 'auto', paddingRight: '0.5rem' }}>
             <div>
                 <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Activity size={20} color="var(--primary)" />
@@ -60,11 +69,40 @@ const RightPanel = () => {
             </div>
 
             <div>
-                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                     <Zap size={20} color="var(--accent)" />
+                    Solar Systems
+                </h2>
+                <table className="status-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Size</th>
+                            <th style={{ textAlign: 'right' }}>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {solarProjects.map((project, idx) => (
+                            <tr key={idx}>
+                                <td style={{ fontWeight: 500 }}>{project.name}</td>
+                                <td style={{ color: 'var(--text-muted)' }}>{project.size}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                    <span className="status-badge status-active">
+                                        {project.status}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Activity size={20} color="var(--primary)" />
                     Weekly Consumption
                 </h2>
-                <div style={{ height: '200px', width: '100%', marginTop: '1rem' }}>
+                <div style={{ height: '160px', width: '100%', marginTop: '0.5rem' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={weeklyData}>
                             <XAxis dataKey="day" hide />
@@ -78,7 +116,7 @@ const RightPanel = () => {
                 </div>
             </div>
 
-            <div className="stat-card" style={{ border: '1px border-top solid var(--primary-glow)', background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 100%)' }}>
+            <div className="stat-card" style={{ border: '1px border-top solid var(--primary-glow)', background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 100%)', marginTop: 'auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                     <ShieldCheck size={20} color="var(--secondary)" />
                     <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>System Health</span>

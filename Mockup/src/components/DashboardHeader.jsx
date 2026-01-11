@@ -1,14 +1,14 @@
-import React from 'react'
-import { Zap, Bell, User, Settings, Sun, Moon } from 'lucide-react'
+import logo from '../assets/images.png'
+import { Bell, User, Settings, Sun, Moon } from 'lucide-react'
 
 const DashboardHeader = ({ theme, toggleTheme }) => {
     return (
         <>
             <div className="logo-section">
                 <div className="logo-icon">
-                    <Zap size={24} fill="currentColor" />
+                    <img src={logo} alt="Energy Innovation Center Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                 </div>
-                <h1 className="logo-text">EnergyFlow Campus</h1>
+                <h1 className="logo-text">Energy Innovation Center</h1>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
