@@ -10,7 +10,8 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [rightPanelWidth, setRightPanelWidth] = useState(340)
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300)
-  const [isResizing, setIsResizing] = useState(null) // 'left', 'right', or 'bottom'
+  const [mapOverlap, setMapOverlap] = useState(0)
+  const [isResizing, setIsResizing] = useState(null) // 'left', 'right', 'map', or 'bottom'
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -26,8 +27,19 @@ function App() {
       } else if (isResizing === 'right') {
         const newWidth = Math.min(Math.max(250, window.innerWidth - e.clientX - 16), 600)
         setRightPanelWidth(newWidth)
+      } else if (isResizing === 'map') {
+        // Adjust how much the map overlaps the bottom panel
+        const dashboardRect = document.querySelector('.main-content').getBoundingClientRect()
+        const bottomPanelTop = dashboardRect.bottom - bottomPanelHeight
+        const currentPos = e.clientY
+        const overlap = Math.max(0, Math.min(bottomPanelHeight, bottomPanelTop - currentPos))
+        // Actually, let's simplify: if we drag the map handle, we change the overlap amount
+        // The overlap is basically "additional height" for the map that isn't counted in the flex flow
+        const mapContainer = document.querySelector('.map-viewport').getBoundingClientRect()
+        const newOverlap = Math.max(0, e.clientY - mapContainer.top - (mapContainer.height - mapOverlap))
+        setMapOverlap(Math.max(0, newOverlap))
       } else if (isResizing === 'bottom') {
-        const newHeight = Math.min(Math.max(100, window.innerHeight - e.clientY - 16), window.innerHeight * 0.8)
+        const newHeight = Math.min(Math.max(50, window.innerHeight - e.clientY - 16), window.innerHeight * 0.9)
         setBottomPanelHeight(newHeight)
       }
     }
@@ -47,7 +59,7 @@ function App() {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isResizing])
+  }, [isResizing, bottomPanelHeight, mapOverlap])
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark')
@@ -73,15 +85,37 @@ function App() {
           <DashboardHeader theme={theme} toggleTheme={toggleTheme} />
         </header>
 
-        <section className="map-viewport glass-panel" style={{ flex: 1 }}>
+        <section
+          className="map-viewport glass-panel"
+          style={{
+            flex: 1,
+            marginBottom: `-${mapOverlap}px`,
+            zIndex: 10,
+            position: 'relative',
+            boxShadow: mapOverlap > 0 ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
+          }}
+        >
           <CampusMap theme={theme} />
         </section>
 
-        <div className={`resizer-handle horizontal ${isResizing === 'bottom' ? 'active' : ''}`} onMouseDown={startResizing('bottom')}>
-          <div className="resizer-line"></div>
+        <div className="horizontal-resizers">
+          <div
+            className={`resizer-handle horizontal map-adjuster ${isResizing === 'map' ? 'active' : ''}`}
+            onMouseDown={startResizing('map')}
+            title="Adjust Map Overlap (Slide Down to Crop)"
+          >
+            <div className="resizer-line"></div>
+          </div>
+          <div
+            className={`resizer-handle horizontal browser-adjuster ${isResizing === 'bottom' ? 'active' : ''}`}
+            onMouseDown={startResizing('bottom')}
+            title="Adjust Browser Window Size"
+          >
+            <div className="resizer-line"></div>
+          </div>
         </div>
 
-        <section className="bottom-panel-container" style={{ height: `${bottomPanelHeight}px` }}>
+        <section className="bottom-panel-container" style={{ height: `${bottomPanelHeight}px`, zIndex: 5 }}>
           <div style={{ position: 'relative', flex: 1, overflow: 'hidden', borderRadius: '1.5rem' }}>
             <iframe
               src="https://egauge75146.d.egauge.net/ng/"
