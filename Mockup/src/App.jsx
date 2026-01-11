@@ -9,7 +9,8 @@ function App() {
   const [theme, setTheme] = useState('dark')
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [rightPanelWidth, setRightPanelWidth] = useState(340)
-  const [isResizing, setIsResizing] = useState(null) // 'left' or 'right'
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(300)
+  const [isResizing, setIsResizing] = useState(null) // 'left', 'right', or 'bottom'
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -25,6 +26,9 @@ function App() {
       } else if (isResizing === 'right') {
         const newWidth = Math.min(Math.max(250, window.innerWidth - e.clientX - 16), 600)
         setRightPanelWidth(newWidth)
+      } else if (isResizing === 'bottom') {
+        const newHeight = Math.min(Math.max(100, window.innerHeight - e.clientY - 16), window.innerHeight * 0.8)
+        setBottomPanelHeight(newHeight)
       }
     }
 
@@ -68,8 +72,25 @@ function App() {
         <header className="header glass-panel">
           <DashboardHeader theme={theme} toggleTheme={toggleTheme} />
         </header>
-        <section className="map-viewport glass-panel">
+
+        <section className="map-viewport glass-panel" style={{ flex: 1 }}>
           <CampusMap theme={theme} />
+        </section>
+
+        <div className={`resizer-handle horizontal ${isResizing === 'bottom' ? 'active' : ''}`} onMouseDown={startResizing('bottom')}>
+          <div className="resizer-line"></div>
+        </div>
+
+        <section className="bottom-panel-container" style={{ height: `${bottomPanelHeight}px` }}>
+          <div style={{ position: 'relative', flex: 1, overflow: 'hidden', borderRadius: '1.5rem' }}>
+            <iframe
+              src="https://egauge75146.d.egauge.net/ng/"
+              className="bottom-panel-content"
+              title="Real-time External Graph"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </section>
       </main>
 
