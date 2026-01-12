@@ -1,9 +1,9 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Sun, Battery, Globe, Zap, Map as MapIcon, Plus, Minus } from 'lucide-react'
 import { renderToString } from 'react-dom/server'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 // Coordinates provided by the user
 const solarLocations = [
@@ -31,7 +31,34 @@ const transformerLocations = [
     { id: 'tx-8', pos: [52.24507956093908, -113.82514717800831], name: 'Transformer TX-08' },
     { id: 'tx-9', pos: [52.24581248680288, -113.82566498544942], name: 'Transformer TX-09' },
     { id: 'tx-10', pos: [52.246269516828264, -113.82425840578173], name: 'Transformer TX-10' },
+    { id: 'tx-11', pos: [52.248724009738424, -113.83261482049033], name: 'Transformer TX-11' },
 ]
+
+// Helper to find nearest target and create Manhattan path
+const calculateNearestPath = (sourcePos, targetLocs) => {
+    if (!targetLocs || targetLocs.length === 0) return null;
+
+    let nearest = targetLocs[0];
+    let minDist = Infinity;
+
+    targetLocs.forEach(target => {
+        const dist = Math.sqrt(
+            Math.pow(sourcePos[0] - target.pos[0], 2) +
+            Math.pow(sourcePos[1] - target.pos[1], 2)
+        );
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = target;
+        }
+    });
+
+    // Orthogonal path (Manhattan): S -> [S.lat, T.lon] -> T
+    return [
+        sourcePos,
+        [sourcePos[0], nearest.pos[1]],
+        nearest.pos
+    ];
+};
 
 const CampusMap = ({ theme }) => {
     const [mapMode, setMapMode] = useState('default') // 'default' or 'satellite'
@@ -40,6 +67,43 @@ const CampusMap = ({ theme }) => {
     const [showBess, setShowBess] = useState(true)
     const [showTransformers, setShowTransformers] = useState(true)
     const center = [52.246, -113.830]
+
+    // Calculate 1-to-1 connections: Each solar gets a unique nearest transformer
+    const connections = useMemo(() => {
+        const assignedTransformers = new Set();
+        return solarLocations.map(solar => {
+            let nearest = null;
+            let minDist = Infinity;
+
+            transformerLocations.forEach(tx => {
+                if (assignedTransformers.has(tx.id)) return;
+
+                const dist = Math.sqrt(
+                    Math.pow(solar.pos[0] - tx.pos[0], 2) +
+                    Math.pow(solar.pos[1] - tx.pos[1], 2)
+                );
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = tx;
+                }
+            });
+
+            if (nearest) {
+                assignedTransformers.add(nearest.id);
+                // Manhattan path: Solar -> [Solar.lat, Tx.lon] -> Tx
+                return {
+                    id: solar.id,
+                    path: [
+                        solar.pos,
+                        [solar.pos[0], nearest.pos[1]],
+                        nearest.pos
+                    ]
+                };
+            }
+            return null;
+        }).filter(Boolean);
+    }, []); // Connections stay stable unless locations change
 
     // Custom Icon creation
     const createSolarIcon = () => {
@@ -159,6 +223,20 @@ const CampusMap = ({ theme }) => {
                                     </div>
                                 </Popup>
                             </Marker>
+                        ))}
+
+                        {showTransformers && showSolar && connections.map((conn) => (
+                            <Polyline
+                                key={`line-${conn.id}`}
+                                positions={conn.path}
+                                className="connection-line"
+                                pathOptions={{
+                                    color: '#22d3ee',
+                                    weight: 2,
+                                    opacity: 0.8,
+                                    dashArray: '10, 10'
+                                }}
+                            />
                         ))}
 
                         <ZoomController />
