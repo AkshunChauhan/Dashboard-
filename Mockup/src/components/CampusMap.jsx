@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Sun, Battery, Globe, Map as MapIcon, Plus, Minus } from 'lucide-react'
+import { Sun, Battery, Globe, Zap, Map as MapIcon, Plus, Minus } from 'lucide-react'
 import { renderToString } from 'react-dom/server'
 import { useState, useEffect } from 'react'
 
@@ -13,15 +13,32 @@ const solarLocations = [
     { id: 4, pos: [52.246026445810585, -113.82597826910015], name: 'AEL Lab' },
     { id: 5, pos: [52.245910519286255, -113.82379213895976], name: 'RDP Carpentry Roof' },
     { id: 6, pos: [52.2461115381801, -113.8314859942632], name: 'Solar walkway' },
+    { id: 7, pos: [52.24573921345892, -113.82595460740829], name: 'Solar walkway' },
 ]
 
 const bessLocations = [
     { id: 'bess-1', pos: [52.24692945220354, -113.82391762328756], name: 'BESS Storage Unit 01' },
 ]
 
+const transformerLocations = [
+    { id: 'tx-1', pos: [52.24882689476097, -113.8281767890768], name: 'Transformer TX-01' },
+    { id: 'tx-2', pos: [52.24746996109212, -113.8292903318412], name: 'Transformer TX-02' },
+    { id: 'tx-3', pos: [52.2465236270749, -113.82973534064482], name: 'Transformer TX-03' },
+    { id: 'tx-4', pos: [52.24490620359536, -113.83058032417108], name: 'Transformer TX-04' },
+    { id: 'tx-5', pos: [52.24662477670595, -113.83290235380821], name: 'Transformer TX-05' },
+    { id: 'tx-6', pos: [52.24580634045058, -113.83246028651685], name: 'Transformer TX-06' },
+    { id: 'tx-7', pos: [52.24522809218563, -113.8280254350449], name: 'Transformer TX-07' },
+    { id: 'tx-8', pos: [52.24507956093908, -113.82514717800831], name: 'Transformer TX-08' },
+    { id: 'tx-9', pos: [52.24581248680288, -113.82566498544942], name: 'Transformer TX-09' },
+    { id: 'tx-10', pos: [52.246269516828264, -113.82425840578173], name: 'Transformer TX-10' },
+]
+
 const CampusMap = ({ theme }) => {
     const [mapMode, setMapMode] = useState('default') // 'default' or 'satellite'
     const [viewMode, setViewMode] = useState('2d') // '2d' or '3d'
+    const [showSolar, setShowSolar] = useState(true)
+    const [showBess, setShowBess] = useState(true)
+    const [showTransformers, setShowTransformers] = useState(true)
     const center = [52.246, -113.830]
 
     // Custom Icon creation
@@ -48,6 +65,19 @@ const CampusMap = ({ theme }) => {
         `,
             iconSize: [44, 44],
             iconAnchor: [22, 22],
+        });
+    };
+
+    const createTransformerIcon = () => {
+        return L.divIcon({
+            className: 'transformer-marker-icon',
+            html: `
+          <div class="marker-inner-transformer ${viewMode === '3d' ? 'marker-3d-transformer' : ''}">
+            ${renderToString(<Zap size={18} />)}
+          </div>
+        `,
+            iconSize: [42, 42],
+            iconAnchor: [21, 21],
         });
     };
 
@@ -81,7 +111,7 @@ const CampusMap = ({ theme }) => {
                             url={tileUrl}
                         />
 
-                        {solarLocations.map((loc) => (
+                        {showSolar && solarLocations.map((loc) => (
                             <Marker
                                 key={loc.id}
                                 position={loc.pos}
@@ -97,7 +127,7 @@ const CampusMap = ({ theme }) => {
                             </Marker>
                         ))}
 
-                        {bessLocations.map((loc) => (
+                        {showBess && bessLocations.map((loc) => (
                             <Marker
                                 key={loc.id}
                                 position={loc.pos}
@@ -109,6 +139,23 @@ const CampusMap = ({ theme }) => {
                                         <div style={{ fontSize: '12px' }}>SOC: {(Math.random() * 20 + 75).toFixed(1)}%</div>
                                         <div style={{ fontSize: '12px' }}>Status: Charging</div>
                                         <div style={{ fontSize: '12px' }}>Capacity: 500 kWh</div>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
+
+                        {showTransformers && transformerLocations.map((loc) => (
+                            <Marker
+                                key={loc.id}
+                                position={loc.pos}
+                                icon={createTransformerIcon()}
+                            >
+                                <Popup>
+                                    <div style={{ color: '#333' }}>
+                                        <strong style={{ display: 'block', borderBottom: '1px solid #eee', marginBottom: '5px' }}>{loc.name}</strong>
+                                        <div style={{ fontSize: '12px' }}>Load: {(Math.random() * 40 + 30).toFixed(1)}%</div>
+                                        <div style={{ fontSize: '12px' }}>Voltage: 12.4 kV</div>
+                                        <div style={{ fontSize: '12px' }}>Status: Optimal</div>
                                     </div>
                                 </Popup>
                             </Marker>
@@ -127,35 +174,63 @@ const CampusMap = ({ theme }) => {
                 zIndex: 1000,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '10px'
+                gap: '15px'
             }}>
-                <button
-                    onClick={() => setMapMode(mapMode === 'default' ? 'satellite' : 'default')}
-                    style={toggleBtnStyle}
-                    title={mapMode === 'default' ? 'Switch to Satellite' : 'Switch to Map'}
-                >
-                    {mapMode === 'default' ? <Globe size={20} /> : <MapIcon size={20} />}
-                </button>
-                <button
-                    onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
-                    style={toggleBtnStyle}
-                    title={viewMode === '2d' ? 'Switch to 3D' : 'Switch to 2D'}
-                >
-                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{viewMode === '2d' ? '3D' : '2D'}</span>
-                </button>
+                {/* View Controls Group */}
+                <div className="toggle-group">
+                    <button
+                        onClick={() => setMapMode(mapMode === 'default' ? 'satellite' : 'default')}
+                        className="toggle-btn"
+                        title={mapMode === 'default' ? 'Switch to Satellite' : 'Switch to Map'}
+                    >
+                        {mapMode === 'default' ? <Globe size={20} /> : <MapIcon size={20} />}
+                    </button>
+                    <button
+                        onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+                        className={`toggle-btn ${viewMode === '3d' ? 'toggle-active' : ''}`}
+                        title={viewMode === '2d' ? 'Switch to 3D' : 'Switch to 2D'}
+                    >
+                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{viewMode === '2d' ? '3D' : '2D'}</span>
+                    </button>
+                </div>
 
-                {/* Zoom Controls moved here */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
+                {/* Layer Visibility Group */}
+                <div className="toggle-group">
+                    <button
+                        onClick={() => setShowSolar(!showSolar)}
+                        className={`toggle-btn ${showSolar ? 'toggle-active' : ''}`}
+                        title={showSolar ? 'Hide Solar Panels' : 'Show Solar Panels'}
+                    >
+                        <Sun size={20} />
+                    </button>
+                    <button
+                        onClick={() => setShowBess(!showBess)}
+                        className={`toggle-btn ${showBess ? 'toggle-active' : ''}`}
+                        title={showBess ? 'Hide battery Storage' : 'Show Battery Storage'}
+                    >
+                        <Battery size={20} />
+                    </button>
+                    <button
+                        onClick={() => setShowTransformers(!showTransformers)}
+                        className={`toggle-btn ${showTransformers ? 'toggle-active' : ''}`}
+                        title={showTransformers ? 'Hide Transformers' : 'Show Transformers'}
+                    >
+                        <Zap size={20} />
+                    </button>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="toggle-group">
                     <button
                         onClick={() => window.leafletMap?.zoomIn()}
-                        style={toggleBtnStyle}
+                        className="toggle-btn"
                         title="Zoom In"
                     >
                         <Plus size={20} />
                     </button>
                     <button
                         onClick={() => window.leafletMap?.zoomOut()}
-                        style={toggleBtnStyle}
+                        className="toggle-btn"
                         title="Zoom Out"
                     >
                         <Minus size={20} />
@@ -188,21 +263,6 @@ const mapWrapperStyle = {
     height: '100%',
     transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
     transformOrigin: 'bottom center',
-}
-
-const toggleBtnStyle = {
-    width: '40px',
-    height: '40px',
-    background: 'var(--surface)',
-    border: '1px solid var(--surface-border)',
-    color: 'white',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backdropFilter: 'var(--glass-blur)',
-    transition: 'all 0.2s ease',
 }
 
 export default CampusMap
